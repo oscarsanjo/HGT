@@ -5,33 +5,29 @@ Editor de Spyder
 Este es un archivo temporal.
 """
 
+from sys import argv
 import os
 import re
 import xlsxwriter
 import subprocess
+#Type in command line, in this order: database directory, fasta directory, fasta file name, folder where you want to set the diamond output, darkhorse folder, config file folder, exclude list folder. If you type default in any query, the defaults folders will be used
 
 workdir = os.getcwd()
-print ("El directorio actual es: "+ workdir)
-database = raw_input("El directorio por defecto para la base de datos es /home/mike/mike_data/projects/darkhorse/db-05-2018/hd2_informative.dmnd\nSi su directorio es este, presione la tecla intro. En caso contrario, especifique su directorio a continuacion: ")
-if database == (""):
-    database = ("/home/mike/mike_data/projects/darkhorse/db-05-2018/hd2_informative.dmnd")
-directorio_fasta = raw_input("Especifique el directorio donde se encuentra su archivo FASTA, sin incluir el nombre de este: ")
-fasta = raw_input("Especifique el nombre de su archivo FASTA: ")
-output = fasta.replace(".fasta",".daa")
-output_tab = fasta.replace(".fasta",".m8")
-dir_dark = raw_input("El directorio por defecto para darkhorse es /home/mike/mike_data/projects/darkhorse/Darkhorse2-DarkHorse-2.0_rev08/bin/darkhorse2.pl\nSi su directorio es este, presione la tecla intro. En caso contrario, especifique el directorio donde tiene instalado darkhorse2.pl")
-if dir_dark == (""):
-    dir_dark = ("/home/mike/mike_data/projects/darkhorse/Darkhorse2-DarkHorse-2.0_rev08/bin/darkhorse2.pl")
-config_file = raw_input("El directorio por defecto para el archivo de configuración es /home/mike/mike_data/projects/darkhorse/Darkhorse2-DarkHorse-2.0_rev08/config\nSi su directorio es este, presiones la tecla intro. En caso contrario, especifique el directorio a continuacion: ")
-if config_file == (""):
-    config_file = ("/home/mike/mike_data/projects/darkhorse/Darkhorse2-DarkHorse-2.0_rev08/config")
-exclude_list = raw_input("El directorio por defecto para la lista de exclusion es /home/mike/mike_data/projects/darkhorse/Darkhorse2-DarkHorse-2.0_rev08/templates/exclude_list_template\nSi su directorio es este, presiones la tecla intro. En caso contrario, especifique el directorio a continuacion: ")
-if exclude_list == (""):
-    exclude_list = ("/home/mike/mike_data/projects/darkhorse/Darkhorse2-DarkHorse-2.0_rev08/templates/exclude_list_template")
+if argv[1] == ("default"):
+    argv[1] = ("/home/mike/mike_data/projects/darkhorse/db-05-2018/hd2_informative.dmnd")
+if argv[5] == ("default"):
+    argv[5] = ("/home/mike/mike_data/projects/darkhorse/Darkhorse2-DarkHorse-2.0_rev08/bin/darkhorse2.pl")
+if argv[6] == ("default"):
+    argv[6] = ("/home/mike/mike_data/projects/darkhorse/Darkhorse2-DarkHorse-2.0_rev08/config")
+if argv[7] == ("default"):
+    argv[7] = ("/home/oscar/exclude")
+    
+output = (argv[3]).replace(".fasta",".daa")
+output_tab = (argv[3]).replace(".fasta",".m8")
 
-diamond_blast = subprocess.check_call(["diamond","blastp","-d",database,"-q", directorio_fasta+"/"+ fasta,"-a", directorio_fasta + "/" + output,"-e","1e-10","-t",".","--max-target-seqs","200","--more-sensitive"])
-diamond_view = subprocess.check_call(["diamond","view","-a",directorio_fasta + "/" + output,"-f","tab","-o",directorio_fasta + "/" + output_tab])
-darkhorse = subprocess.check_call(["perl",dir_dark,"-c",config_file,"-t",directorio_fasta + "/" + output_tab,"-e",exclude_list,"-g",directorio_fasta + "/" + fasta])
+diamond_blast = subprocess.check_call(["diamond","blastp","-d",argv[1],"-q", argv[2],"-a", argv[4] + "/" + output,"-e","1e-10","-t",".","--max-target-seqs","200","--more-sensitive"])
+diamond_view = subprocess.check_call(["diamond","view","-a",argv[4] + "/" + output,"-f","tab","-o",argv[4] + "/" + output_tab])
+darkhorse = subprocess.check_call(["perl",argv[5],"-c",argv[6],"-t",argv[4] + "/" + output_tab,"-e",argv[7],"-g",argv[2]])
 
 lista_directorios = (os.listdir("."))
 
@@ -85,4 +81,4 @@ for i in range(0, len(lista), 17):
     worksheet.write(row,col+15, lista[i+16])
     row += 1
 workbook.close()
-workbook = os.rename(workdir + "/" + "resultados.xlsx", directorio_fasta + "/" + "resultados.xlsx")
+workbook = os.rename(workdir + "/" + "resultados.xlsx", argv[4] + "/" + "resultados.xlsx")
