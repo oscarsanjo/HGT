@@ -95,12 +95,13 @@ parser.add_argument("-dh", "--darkhorse", type=str, metavar = "", default = "/ho
 parser.add_argument("-c", "--config", type=str, metavar = "", default = "/home/mike/mike_data/projects/darkhorse/Darkhorse2-DarkHorse-2.0_rev08/config", help = "Darkhorse config file directory. Default directory: /home/mike/mike_data/projects/darkhorse/Darkhorse2-DarkHorse-2.0_rev08/config")
 parser.add_argument("-e", "--exclude", type=str, metavar = "", default = "/home/oscar/exclude",help = "Darkhorse exclude file directory. Default directory: home/oscar/exclude")
 args= parser.parse_args()
+#Type in command line, in this order: database directory, fasta directory, fasta file name, folder where you want to set the outputs, darkhorse folder, config file folder, exclude list folder.
 output = (args.fasta_name).replace(".fasta",".daa")
 output_tab = (args.fasta_name).replace(".fasta",".m8")
 output_data = (args.fasta_name).replace("fasta","")
 #DIAMOND BLAST and Darkhorse subprocesses
-diamond_blast = subprocess.check_call(["diamond","blastp","-d",args.database,"-q", args.fasta_directory,"-a", args.output + "/" + output,"-e","1e-10","-t",".","--max-target-seqs","200","--more-sensitive"])
-diamond_view = subprocess.check_call(["diamond","view","-a",args.output + "/" + output,"-f","tab","-o",args.output + "/" + output_tab])
+#diamond_blast = subprocess.check_call(["diamond","blastp","-d",args.darkhorse,"-q", args.fasta_directory,"-a", args.output + "/" + output,"-e","1e-10","-t",".","--max-target-seqs","200","--more-sensitive"])
+#diamond_view = subprocess.check_call(["diamond","view","-a",args.output + "/" + output,"-f","tab","-o",args.output + "/" + output_tab])
 darkhorse = subprocess.Popen(["perl",args.darkhorse,"-c",args.config,"-t",args.output + "/" + output_tab,"-e",args.exclude,"-g",args.fasta_directory])
 pid = str(darkhorse.pid)
 darkhorse.wait()
