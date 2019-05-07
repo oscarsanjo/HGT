@@ -102,7 +102,6 @@ parser.add_argument("-e", "--exclude", type=str, metavar = "", default = "/home/
 parser.add_argument("-org", "--organism", type=str, metavar = "",required = True,help = "Query organism name in NCBI database. This is used to avoid self-matches in alignments")
 args= parser.parse_args()
 fasta_file = os.path.basename(args.fasta_directory)
-print fasta_file
 output = (fasta_file).replace(".fasta",".daa")
 output_tab = (fasta_file).replace(".fasta",".m8")
 output_data = (fasta_file).replace("fasta","")
