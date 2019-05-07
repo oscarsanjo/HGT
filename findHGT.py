@@ -16,6 +16,7 @@ import xlsxwriter
 import subprocess
 import shutil
 import argparse
+import time
 
 #Functions
 #Get sequences of HGT candidates
@@ -44,16 +45,28 @@ def blast_hits(sequenceid, folder):
     ID_list = re.findall(sequenceid +"\t(.*?)\t", f)
     return ID_list
 #Create FASTA file with HGT candidate + blasthits sequences
-def output_file(sequence3, ID_list, name_file, folder):
+def output_file(sequence3, ID_list, name_file, folder, organism):
     Entrez.email = "oscarsanjo@usal.es"
+    Entrez.api_key = "7de6badacc07057ed38b7bc5fe4ea5088009"
     fasta_in_file_temp = open((folder + "/" + "temp.fasta"),"w+")
     name_file = name_file.replace("|","_")
     sequence3 = sequence3.replace("|","_")
     fasta_in_file_temp.write(sequence3)
+    ID_list = list(dict.fromkeys(ID_list))
     for i in ID_list:
-        handle = Entrez.efetch(db = "protein", id = i, rettype = "gp", retmode = "xml" )
-        record = Entrez.read(handle)
-        fasta_in_file_temp.write(("\n" + ">" + record[0]["GBSeq_organism"] + "_"+ i + "\n" + record[0]["GBSeq_sequence"].upper()))
+        done = False
+        while not done:
+            try:
+                handle = Entrez.efetch(db = "protein", id = i, rettype = "gp", retmode = "xml" )
+                record = Entrez.read(handle)
+                non_self = re.search(organism,record[0]["GBSeq_organism"])
+                if non_self == None:
+                    fasta_in_file_temp.write(("\n" + ">" + record[0]["GBSeq_organism"] + "_"+ i + "\n" + record[0]["GBSeq_sequence"].upper()))
+                handle.close()
+                done = True
+            except:
+                print ("An error has occurred. Trying again...")
+                time.sleep(10)
     fasta_in_file_temp = open((folder + "/" + "temp.fasta"),"r")
     text = fasta_in_file_temp.read()
     text_replaced = text.replace(" ","_")
@@ -78,7 +91,7 @@ def convert_phylip(input_align, folder, query):
 def build_phylo_tree(input_phylip, folder, query):
     folder_tree = (folder + "/" + "trees" + "/" + query.replace("|","_"))
     os.mkdir(folder_tree)
-    phyml = subprocess.check_call(["phyml","--quiet", "-i", input_phylip, "-d", "aa", "-b","4"])
+    phyml = subprocess.check_call(["phyml","--quiet", "-i", input_phylip, "-d", "aa", "-b","4","--no_memory_check"])
     shutil.move((input_phylip + "_phyml_boot_stats.txt"), folder_tree)
     shutil.move((input_phylip + "_phyml_boot_trees.txt"), folder_tree)
     shutil.move((input_phylip + "_phyml_stats.txt"), folder_tree)
@@ -94,12 +107,14 @@ parser.add_argument("-o", "--output", type=str,metavar = "", help = "Directory w
 parser.add_argument("-dh", "--darkhorse", type=str, metavar = "", default = "/home/mike/mike_data/projects/darkhorse/Darkhorse2-DarkHorse-2.0_rev08/bin/darkhorse2.pl",help = "Folder where you have installed Darkhorse. Default directory: /home/mike/mike_data/projects/darkhorse/Darkhorse2-DarkHorse-2.0_rev08/bin/darkhorse2.pl")
 parser.add_argument("-c", "--config", type=str, metavar = "", default = "/home/mike/mike_data/projects/darkhorse/Darkhorse2-DarkHorse-2.0_rev08/config", help = "Darkhorse config file directory. Default directory: /home/mike/mike_data/projects/darkhorse/Darkhorse2-DarkHorse-2.0_rev08/config")
 parser.add_argument("-e", "--exclude", type=str, metavar = "", default = "/home/oscar/exclude",help = "Darkhorse exclude file directory. Default directory: home/oscar/exclude")
+parser.add_argument("-org", "--organism", type=str, metavar = "",help = "Query organism name in NCBI database. This is used to avoid self-matches in alignments")
 args= parser.parse_args()
+#Type in command line, in this order: database directory, fasta directory, fasta file name, folder where you want to set the outputs, darkhorse folder, config file folder, exclude list folder.
 output = (args.fasta_name).replace(".fasta",".daa")
 output_tab = (args.fasta_name).replace(".fasta",".m8")
 output_data = (args.fasta_name).replace("fasta","")
 #DIAMOND BLAST and Darkhorse subprocesses
-diamond_blast = subprocess.check_call(["diamond","blastp","-d",args.database,"-q", args.fasta_directory,"-a", args.output + "/" + output,"-e","1e-10","-t",".","--max-target-seqs","200","--more-sensitive"])
+diamond_blast = subprocess.check_call(["diamond","blastp","-d",args.darkhorse,"-q", args.fasta_directory,"-a", args.output + "/" + output,"-e","1e-10","-t",".","--max-target-seqs","200","--more-sensitive"])
 diamond_view = subprocess.check_call(["diamond","view","-a",args.output + "/" + output,"-f","tab","-o",args.output + "/" + output_tab])
 darkhorse = subprocess.Popen(["perl",args.darkhorse,"-c",args.config,"-t",args.output + "/" + output_tab,"-e",args.exclude,"-g",args.fasta_directory])
 pid = str(darkhorse.pid)
@@ -180,7 +195,7 @@ for i in a:
     print ("Getting BLAST hits from original sequence... " + queue)
     c1 = blast_hits(i, (args.output + "/" + output_tab))
     print ("Generating fasta file... " + queue)
-    d1 = output_file(b1,c1,i,(args.output + "/" + "outputs"))
+    d1 = output_file(b1,c1,i,(args.output + "/" + "outputs"),args.organism)
     print ("Aligning... " + queue)
     e1 = alignment(d1,(args.output + "/" + "outputs"),i)
     print ("Converting to pyhlip... " + queue)
