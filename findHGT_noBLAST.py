@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Editor de Spyder
-
-Este es un archivo temporal.
-"""
-
 from Bio import Entrez
 from Bio import SeqIO
 from Bio import AlignIO
@@ -101,18 +94,18 @@ def build_phylo_tree(input_phylip, folder, query):
 #Help
 parser = argparse.ArgumentParser(description ="This program allows you to automatize the search of HGT candidates from a FASTA file")
 parser.add_argument("-d", "--database", type=str, metavar = "", default = "/home/mike/mike_data/projects/darkhorse/db-05-2018/hd2_informative.dmnd",help = "DIAMOND database folder. Default directory: /home/mike/mike_data/projects/darkhorse/db-05-2018/hd2_informative.dmnd")
-parser.add_argument("-f", "--fasta_directory", type=str,metavar = "", help = "FASTA file directory")
-parser.add_argument("-f2", "--fasta_name", type=str,metavar = "", help = "FASTA file name")
-parser.add_argument("-o", "--output", type=str,metavar = "", help = "Directory where you want to saver your output")
+parser.add_argument("-f", "--fasta_directory", type=str,metavar = "", required = True, help = "FASTA file directory")
+parser.add_argument("-o", "--output", type=str,metavar = "", required = True, help = "Directory where you want to saver your output")
 parser.add_argument("-dh", "--darkhorse", type=str, metavar = "", default = "/home/mike/mike_data/projects/darkhorse/Darkhorse2-DarkHorse-2.0_rev08/bin/darkhorse2.pl",help = "Folder where you have installed Darkhorse. Default directory: /home/mike/mike_data/projects/darkhorse/Darkhorse2-DarkHorse-2.0_rev08/bin/darkhorse2.pl")
 parser.add_argument("-c", "--config", type=str, metavar = "", default = "/home/mike/mike_data/projects/darkhorse/Darkhorse2-DarkHorse-2.0_rev08/config", help = "Darkhorse config file directory. Default directory: /home/mike/mike_data/projects/darkhorse/Darkhorse2-DarkHorse-2.0_rev08/config")
 parser.add_argument("-e", "--exclude", type=str, metavar = "", default = "/home/oscar/exclude",help = "Darkhorse exclude file directory. Default directory: home/oscar/exclude")
-parser.add_argument("-org", "--organism", type=str, metavar = "",help = "Query organism name in NCBI database. This is used to avoid self-matches in alignments")
+parser.add_argument("-org", "--organism", type=str, metavar = "",required = True,help = "Query organism name in NCBI database. This is used to avoid self-matches in alignments")
 args= parser.parse_args()
-#Type in command line, in this order: database directory, fasta directory, fasta file name, folder where you want to set the outputs, darkhorse folder, config file folder, exclude list folder.
-output = (args.fasta_name).replace(".fasta",".daa")
-output_tab = (args.fasta_name).replace(".fasta",".m8")
-output_data = (args.fasta_name).replace("fasta","")
+fasta_file = os.path.basename(args.fasta_directory)
+print fasta_file
+output = (fasta_file).replace(".fasta",".daa")
+output_tab = (fasta_file).replace(".fasta",".m8")
+output_data = (fasta_file).replace("fasta","")
 #DIAMOND BLAST and Darkhorse subprocesses
 #diamond_blast = subprocess.check_call(["diamond","blastp","-d",args.database,"-q", args.fasta_directory,"-a", args.output + "/" + output,"-e","1e-10","-t",".","--max-target-seqs","200","--more-sensitive"])
 #diamond_view = subprocess.check_call(["diamond","view","-a",args.output + "/" + output,"-f","tab","-o",args.output + "/" + output_tab])
