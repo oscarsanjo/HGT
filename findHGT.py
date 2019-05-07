@@ -114,7 +114,7 @@ output = (args.fasta_name).replace(".fasta",".daa")
 output_tab = (args.fasta_name).replace(".fasta",".m8")
 output_data = (args.fasta_name).replace("fasta","")
 #DIAMOND BLAST and Darkhorse subprocesses
-diamond_blast = subprocess.check_call(["diamond","blastp","-d",args.darkhorse,"-q", args.fasta_directory,"-a", args.output + "/" + output,"-e","1e-10","-t",".","--max-target-seqs","200","--more-sensitive"])
+diamond_blast = subprocess.check_call(["diamond","blastp","-d",args.database,"-q", args.fasta_directory,"-a", args.output + "/" + output,"-e","1e-10","-t",".","--max-target-seqs","200","--more-sensitive"])
 diamond_view = subprocess.check_call(["diamond","view","-a",args.output + "/" + output,"-f","tab","-o",args.output + "/" + output_tab])
 darkhorse = subprocess.Popen(["perl",args.darkhorse,"-c",args.config,"-t",args.output + "/" + output_tab,"-e",args.exclude,"-g",args.fasta_directory])
 pid = str(darkhorse.pid)
