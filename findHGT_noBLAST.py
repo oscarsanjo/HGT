@@ -54,7 +54,11 @@ def output_file(sequence3, ID_list, name_file, folder, organism):
                 record = Entrez.read(handle)
                 non_self = re.search(organism,record[0]["GBSeq_organism"])
                 if non_self == None:
-                    fasta_in_file_temp.write(("\n" + ">" + record[0]["GBSeq_organism"] + "_"+ i + "\n" + record[0]["GBSeq_sequence"].upper()))
+                    if ("#" in record[0]["GBSeq_organism"]) == True:
+                        record[0]["GBSeq_organism"] = record[0]["GBSeq_organism"].replace("#","")
+                        fasta_in_file_temp.write(("\n" + ">" + record[0]["GBSeq_organism"] + "_"+ i + "\n" + record[0]["GBSeq_sequence"].upper()))
+                    else:
+                        fasta_in_file_temp.write(("\n" + ">" + record[0]["GBSeq_organism"] + "_"+ i + "\n" + record[0]["GBSeq_sequence"].upper()))
                 handle.close()
                 done = True
             except:
@@ -81,10 +85,10 @@ def convert_phylip(input_align, folder, query):
     phylip = AlignIO.convert(input_align, "fasta", output_phylip, "phylip-relaxed")
     return output_phylip
 #Build phylogenetic tree
-def build_phylo_tree(input_phylip, folder, query):
+def build_phylo_tree(input_phylip, folder, query, bootstrap):
     folder_tree = (folder + "/" + "trees" + "/" + query.replace("|","_"))
     os.mkdir(folder_tree)
-    phyml = subprocess.check_call(["phyml","--quiet", "-i", input_phylip, "-d", "aa", "-b","4","--no_memory_check"])
+    phyml = subprocess.check_call(["phyml","--quiet", "-i", input_phylip, "-d", "aa", "-b",bootstrap,"--no_memory_check"])
     shutil.move((input_phylip + "_phyml_boot_stats.txt"), folder_tree)
     shutil.move((input_phylip + "_phyml_boot_trees.txt"), folder_tree)
     shutil.move((input_phylip + "_phyml_stats.txt"), folder_tree)
@@ -95,11 +99,13 @@ def build_phylo_tree(input_phylip, folder, query):
 parser = argparse.ArgumentParser(description ="This program allows you to automatize the search of HGT candidates from a FASTA file")
 parser.add_argument("-d", "--database", type=str, metavar = "", default = "/home/mike/mike_data/projects/darkhorse/db-05-2018/hd2_informative.dmnd",help = "DIAMOND database folder. Default directory: /home/mike/mike_data/projects/darkhorse/db-05-2018/hd2_informative.dmnd")
 parser.add_argument("-f", "--fasta_directory", type=str,metavar = "", required = True, help = "FASTA file directory")
-parser.add_argument("-o", "--output", type=str,metavar = "", required = True, help = "Directory where you want to saver your output")
+parser.add_argument("-o", "--output", type=str,metavar = "", required = True, help = "Directory where you want to save your output")
 parser.add_argument("-dh", "--darkhorse", type=str, metavar = "", default = "/home/mike/mike_data/projects/darkhorse/Darkhorse2-DarkHorse-2.0_rev08/bin/darkhorse2.pl",help = "Folder where you have installed Darkhorse. Default directory: /home/mike/mike_data/projects/darkhorse/Darkhorse2-DarkHorse-2.0_rev08/bin/darkhorse2.pl")
 parser.add_argument("-c", "--config", type=str, metavar = "", default = "/home/mike/mike_data/projects/darkhorse/Darkhorse2-DarkHorse-2.0_rev08/config", help = "Darkhorse config file directory. Default directory: /home/mike/mike_data/projects/darkhorse/Darkhorse2-DarkHorse-2.0_rev08/config")
 parser.add_argument("-e", "--exclude", type=str, metavar = "", default = "/home/oscar/exclude",help = "Darkhorse exclude file directory. Default directory: home/oscar/exclude")
 parser.add_argument("-org", "--organism", type=str, metavar = "",required = True,help = "Query organism name in NCBI database. This is used to avoid self-matches in alignments")
+parser.add_argument("-s", "--maxtargetseq", type=str, metavar="",default= "33",help="BLAST maximum target sequences for the analysis.  Default = 33")
+parser.add_argument("-b", "--bootstrap", type=str, metavar="",default= "4",help="Bootstrap value for phylogenetic trees. Default = 4")
 args= parser.parse_args()
 fasta_file = os.path.basename(args.fasta_directory)
 output = (fasta_file).replace(".fasta",".daa")
@@ -107,7 +113,7 @@ output_tab = (fasta_file).replace(".fasta",".m8")
 output_data = (fasta_file).replace("fasta","")
 #DIAMOND BLAST and Darkhorse subprocesses
 #diamond_blast = subprocess.check_call(["diamond","blastp","-d",args.database,"-q", args.fasta_directory,"-a", args.output + "/" + output,"-e","1e-10","-t",".","--max-target-seqs","200","--more-sensitive"])
-#diamond_view = subprocess.check_call(["diamond","view","-a",args.output + "/" + output,"-f","tab","-o",args.output + "/" + output_tab])
+#diamond_view = subprocess.check_call(["diamond","view","-a",args.output + "/" + output,"-f","tab","-o",args.output + "/" + output_tab,"--max-target-seqs",args.maxtargetseq])
 darkhorse = subprocess.Popen(["perl",args.darkhorse,"-c",args.config,"-t",args.output + "/" + output_tab,"-e",args.exclude,"-g",args.fasta_directory])
 pid = str(darkhorse.pid)
 darkhorse.wait()
@@ -176,10 +182,12 @@ os.mkdir(args.output + "/" + "outputs" + "/" + "phylip")
 os.mkdir(args.output + "/" + "outputs" + "/" + "trees")
 print ("Getting HGT candidates...")
 a = obtain_seq(args.output + "/" + "results_" + pid + ".xlsx")
+#Creates a file with the name of HGT candidates
 txt_HGT = open(args.output + "/" + "HGT_IDs.txt","w+")
 for i in a:
     txt_HGT.write(i + "\n")
 txt_HGT.close()
+#Loop for building phylogenetic trees from the Darkhorse output
 for i in a:
     queue = str((a.index(i) + 1)) + "/" + str(len(a))
     print ("Getting original sequence... " + queue)
@@ -193,4 +201,4 @@ for i in a:
     print ("Converting to pyhlip... " + queue)
     f1 = convert_phylip(e1,(args.output + "/" + "outputs"),i)
     print ("Building phylogenetic tree... " + queue)
-    g1 = build_phylo_tree(f1,(args.output + "/" + "outputs"),i)
+    g1 = build_phylo_tree(f1,(args.output + "/" + "outputs"),i, args.bootstrap)
