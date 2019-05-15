@@ -44,11 +44,11 @@ If you want to retry the script without BLAST search, make sure you have erased 
 ## FAQ
 > My directories are't recognized
 
-- Make sure you have written your directory properly. If you forgot a "/", that's the problem
+   Make sure you have written your directory properly. If you forgot a "/", that's the problem
 
 > There was a problem while I was running PhyML
 
-- This usually happens due to rare characters, such as "#". If you find a mistake like this, please let me know and I'll fix it
+  This usually happens due to rare characters, such as "#". If you find a mistake like this, please let me know and I'll fix it
 
 > How can I change DarkHorse, MAFFT or PhyML parameters?
 
