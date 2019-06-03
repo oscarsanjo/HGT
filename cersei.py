@@ -131,12 +131,13 @@ def output_file(sequence3, ID_list, name_file, folder, organism, mail, api):
     fasta_in_file_temp = open((folder + "/" + "temp.fasta"),"r")
     text = fasta_in_file_temp.read()
     text_replaced = text.replace(" ","_")
+    counter = text.count(">")
     directory_fasta_in_file = (folder + "/" + "BLASThits" + "/" + "BLASThits_" + name_file + ".fasta")
     fasta_in_file = open((directory_fasta_in_file),"w+")
     fasta_in_file.write(text_replaced)
     fasta_in_file.close()
     fasta_in_file_temp = os.remove(folder + "/" + "temp.fasta")
-    return directory_fasta_in_file
+    return directory_fasta_in_file, counter
 #Alignment with mafft
 def alignment(input_fasta, folder, query):
     directory = (folder + "/" + "alignments" +  "/" + "alignment_" + query.replace("|","_"))
@@ -213,7 +214,9 @@ for i in a:
     print ("Getting BLAST hits from original sequence... " + queue)
     c1 = blast_hits(i, (args.output + "/" + output_tab))
     print ("Generating fasta file... " + queue)
-    d1 = output_file(b1,c1,i,(args.output + "/" + "outputs"),args.organism,args.mail,args.apikey)
+    d1, d2 = output_file(b1,c1,i,(args.output + "/" + "outputs"),args.organism,args.mail,args.apikey)
+    if d2 == 2:
+        continue
     print ("Aligning... " + queue)
     e1 = alignment(d1,(args.output + "/" + "outputs"),i)
     print ("Converting to pyhlip... " + queue)
