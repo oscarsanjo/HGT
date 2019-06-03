@@ -215,11 +215,11 @@ for i in a:
     c1 = blast_hits(i, (args.output + "/" + output_tab))
     print ("Generating fasta file... " + queue)
     d1, d2 = output_file(b1,c1,i,(args.output + "/" + "outputs"),args.organism,args.mail,args.apikey)
-    if d2 == 2:
-        continue
     print ("Aligning... " + queue)
     e1 = alignment(d1,(args.output + "/" + "outputs"),i)
     print ("Converting to pyhlip... " + queue)
     f1 = convert_phylip(e1,(args.output + "/" + "outputs"),i)
+    if d2 == 2:
+        continue
     print ("Building phylogenetic tree... " + queue)
     g1 = build_phylo_tree(f1,(args.output + "/" + "outputs"),i, args.bootstrap)
